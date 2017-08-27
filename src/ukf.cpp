@@ -193,6 +193,51 @@ void UKF::Prediction(double delta_t) {
   Complete this function! Estimate the object's location. Modify the state
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
+
+  MatrixXd Xsig_pred = AugmentedPredictedSigmaPoints(delta_t);
+
+  // Lesson 7.24
+  // Predict mean and covariance
+
+  //create vector for predicted state (5 x 1)
+  VectorXd x = VectorXd(n_x_);
+
+  //create covariance matrix for prediction (5 x 5)
+  MatrixXd P = MatrixXd(n_x_, n_x_);
+
+  // set weights
+  double weight_0 = lambda_/(lambda_+n_aug_);
+  weights_(0) = weight_0;
+
+  for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights_
+    double weight = 0.5/(n_aug_+lambda_);
+    weights_(i) = weight;
+  }
+
+  //predicted state mean
+  x.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    x = x + weights_(i) * Xsig_pred.col(i);
+  }
+
+  //predicted state covariance matrix
+  P.fill(0.0);
+
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+
+    // state difference
+    VectorXd x_diff = Xsig_pred.col(i) - x;
+
+    //angle normalization
+    while (x_diff(3) > M_PI) x_diff(3) -= 2. * M_PI;
+    while (x_diff(3) < -M_PI) x_diff(3) += 2. * M_PI;
+
+    P = P + weights_(i) * x_diff * x_diff.transpose();
+  }
+
+  // Update predicted state and covariance Matrix
+  x_ = x;
+  P_ = P;
 }
 
 /**
