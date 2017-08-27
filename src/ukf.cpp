@@ -212,6 +212,23 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     is_initialized_ = true;
     return;
   }
+
+  // Predict and update process flow
+
+  // update the timestamp
+  double time_delta = (meas_package.timestamp_ - time_us_) / 1000000.0;
+  time_us_ = meas_package.timestamp_;
+
+  // update x_ and P_
+  Prediction(time_delta);
+
+  if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+      // Radar updates
+      UpdateRadar(meas_package);
+  } else {
+      // Lidar updates
+      UpdateLidar(meas_package);
+  }
 }
 /**
  * Predicts sigma points, the state, and the state covariance matrix.
