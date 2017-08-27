@@ -181,6 +181,38 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   measurements.
   */
 
+  if (!is_initialized_) {
+    if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+      /**
+      Convert radar from polar to cartesian coordinates and initialize state.
+      */
+      float rho = meas_package.raw_measurements_[0];
+      float phi = meas_package.raw_measurements_[1];
+      float rho_dot = meas_package.raw_measurements_[2];
+      x_ << rho * cos(phi), rho * sin(phi), rho_dot, 0.0, 0.0;
+
+    } else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
+      /**
+      Initialize state.
+      */
+
+      // set the state with the initial location and zero velocity
+      float px = meas_package.raw_measurements_[0];
+      float py = meas_package.raw_measurements_[1];
+      x_ << px, py, 0.0, 0.0, 0.0;
+    }
+
+    P_ << 1, 0, 0, 0, 0,
+          0, 1, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
+          0, 0, 0, 0, 1;
+
+    time_us_ = meas_package.timestamp_;
+    is_initialized_ = true;
+    return;
+  }
+}
 /**
  * Predicts sigma points, the state, and the state covariance matrix.
  * @param {double} delta_t the change in time (in seconds) between the last
